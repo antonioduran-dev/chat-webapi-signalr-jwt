@@ -71,7 +71,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("MyPolicy", app =>
     {
-        app.WithOrigins("http://123456:0000") // the url that access to server
+        app.WithOrigins("http://127.0.0.1:5500") // the url that access to server
         .AllowAnyHeader()
         .AllowAnyMethod()
         .AllowCredentials();

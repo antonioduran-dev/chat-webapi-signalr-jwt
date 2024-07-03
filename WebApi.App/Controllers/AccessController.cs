@@ -40,7 +40,7 @@ namespace WebApi.App.Controllers
             var userToken = await _accessService.Login(model);
 
             if (userToken != null)
-                return StatusCode(StatusCodes.Status200OK, new { isSuccess = true, userToken });
+                return StatusCode(StatusCodes.Status200OK, new { isSuccess = true, token = userToken });
             else
                 return StatusCode(StatusCodes.Status404NotFound, new { isSuccess = false, token = "" });
         }

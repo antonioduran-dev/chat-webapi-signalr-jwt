@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Chat</title>
+</head>
+
+<body>
+    <h1>Register</h1>
+    <input type="text" id="registerUsername" placeholder="Username" />
+    <input type="password" id="registerPassword" placeholder="Password" />
+    <button onclick="register()">Register</button>
+
+    <h1>Login</h1>
+    <input type="text" id="loginUsername" placeholder="Username" />
+    <input type="password" id="loginPassword" placeholder="Password" />
+    <button onclick="login()">Login</button>
+
+    <h1>Chat</h1>
+    <input type="text" id="messageInput" placeholder="Message" />
+    <button onclick="sendMessage()">Send</button>
+    <div id="messagesList"></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/5.0.9/signalr.min.js"></script>
+    <script>
+        let token = null;
+        let connection = null;
+
+        async function register() {
+            const username = document.getElementById("registerUsername").value;
+            const password = document.getElementById("registerPassword").value;
+
+            const response = await fetch('https://localhost:7286/api/access/register', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ userName: username, password: password })
+            });
+
+            if (response.ok) {
+                alert("Registration successful");
+            } else {
+                alert("Registration failed");
+            }
+        }
+
+        async function login() {
+            const username = document.getElementById("loginUsername").value;
+            const password = document.getElementById("loginPassword").value;
+            try {
+
+                const response = await fetch('https://localhost:7286/api/access/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ userName: username, password: password })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    token = data.token;
+                    alert("Login successful");
+                    startSignalRConnection();
+                } else {
+                    alert("Login failed");
+                }
+            } catch (error) {
+                console.error('Error during login:', error);
+            }
+
+        }
+
+        async function startSignalRConnection() {
+            connection = new signalR.HubConnectionBuilder()
+                .withUrl("https://localhost:7286/chatHub", { accessTokenFactory: () => token })
+                .build();
+
+            connection.on("ReceiveMessage", (user, message, timestamp) => {
+                const msg = document.createElement("div");
+                msg.textContent = `${user} (${new Date(timestamp).toLocaleTimeString()}): ${message}`;
+                document.getElementById("messagesList").appendChild(msg);
+            });
+
+            await connection.start().catch(err => console.error(err.toString()));
+        }
+
+        async function sendMessage() {
+            const message = document.getElementById("messageInput").value;
+
+            await fetch('https://localhost:7286/api/chat/send', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ text: message })
+            });
+        }
+    </script>
+</body>
+
+</html>
